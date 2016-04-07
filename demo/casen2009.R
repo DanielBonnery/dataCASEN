@@ -1,8 +1,11 @@
+require(dataCASEN)
 data(casen2009)
 set.seed(1)
 N<-length(unique(casen2009$FOLIO))
-householdlevel<-unique(casen2009[!is.na(casen2009$POBRE),][c("FOLIO","CORTE","REGION","COMUNA","SEGMENTO","ESTRATO","IDVIV","EXPR")])
-householdlevel$POBRE<-is.element(householdlevel$CORTE,levels(householdlevel$CORTE)[1:2])
+library(survey)
+householdlevel<-casen2009[casen2009$O==1,]
+householdlevel$POBRE<-householdlevel$CORTE!="No pobre"
+#Use of sampling package
 s=sample(unique(householdlevel$FOLIO),2000)
 n<-length(s)
 pikls<-matrix(n*(n-1)/(N*(N-1)),n,n)
@@ -36,12 +39,13 @@ segments(x0 = 1:15,x1=1:15,y0=estimates[4,ord],y1=estimates[5,ord])
 
 #Use of survey package
 
+data(casen2009)
 library(survey)
-householdlevel$POBRE<-is.element(householdlevel$CORTE,levels(casen2009$CORTE)[1:2])
+casen2009$POBRE<-is.element(casen2009$CORTE,levels(casen2009$CORTE)[1:2])
 casen2009.design<-
-  svydesign(id=~SEGMENTO+IDVIV,
+  svydesign(id=~SEGMENTO+FOLIO,
             strata=~ESTRATO,
-            data=householdlevel,
+            data=casen2009,
             weights=~EXPR)
 options(survey.lonely.psu = "adjust")
 povertyratepercomuna<-svyby(~POBRE,~COMUNA,casen2009.design,svymean, vartype=c("se","cv","var"))
